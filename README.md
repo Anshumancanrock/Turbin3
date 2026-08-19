@@ -258,12 +258,24 @@ npm i -g pnpm
 ```bash
 pnpm install
 anchor build
-anchor keys sync          # only if you are deploying under your own program ID
+anchor keys sync          # see the warning below — a fresh clone always needs this
 solana config set --url devnet
-solana airdrop 3          # deploying costs ~1.24 SOL of rent, plus a transient buffer
+solana airdrop 3          # ~1.24 SOL of rent for the program, ~0.03 for the IDL,
+                          # 1 SOL of working capital for the deposit test
 anchor deploy
 anchor test --skip-deploy
 ```
+
+> **A fresh clone cannot deploy this program as-is.** The program keypair lives under
+> `target/`, which is gitignored — as keypairs should be. So `anchor build` on a fresh
+> clone mints a *new* one, and you end up with a build whose IDL advertises
+> `HZbxjG93…wmsw` (from `declare_id!`) while `anchor deploy` would deploy to whatever
+> new address it just generated. The tests follow the IDL, so they would quietly talk to
+> the program *I* deployed while your SOL paid for an orphan copy at a different address.
+> Run `anchor keys sync` before deploying and both will point at your own key.
+>
+> To verify this submission rather than rebuild it, the explorer links at the top of this
+> README are the source of truth.
 
 Then confirm the registration landed:
 
@@ -302,6 +314,28 @@ means the CPI is correct. Use a fresh wallet (`--provider.wallet <path>`) for ea
 run, or `--reset` the validator, since the same one-shot rule applies locally.
 
 There is also a LiteSVM test in Rust (`cargo test`), which does not touch a validator.
+
+## Things I noticed and deliberately left alone
+
+**`pnpm lint` fails, and did before this change.** The repo pins `prettier@^2`, whose
+`trailingComma` default is `es5`, but the existing sources were formatted by prettier 3
+(`trailingComma: all`). So the starter's own lint script rejects the starter's own files.
+Reformatting to satisfy prettier 2 would strip trailing commas across code I did not
+write, so I matched the existing style instead. A three-line `.prettierrc` setting
+`"trailingComma": "all"` would fix it properly if that's wanted.
+
+**Dead template scaffolding.** `constants.rs` still carries `COUNTER_SEED`,
+`HELLO_WORLD_LAMPORTS` and `MAX_COUNT`, and `error.rs` two counter errors — leftovers
+from whatever template this was generated from, unrelated to a vault. Deleting them is
+correct but it is a different change, and I would rather hand over a diff that does one
+thing.
+
+**This program will register anyone who calls it, under my handle.** The GitHub name is a
+compile-time constant, so any wallet that finds the deployed program and calls `withdraw`
+gets registered as `Anshumancanrock`. It costs the caller their own one-time registration
+and gains them nothing, and it falls out of the design the task specifies, so I have not
+tried to defend against it — but it is a real property of hardcoding the value rather than
+taking it as an instruction argument.
 
 ## Layout
 
