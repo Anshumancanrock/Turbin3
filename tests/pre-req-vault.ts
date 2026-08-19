@@ -88,7 +88,7 @@ describe("pre-req-vault", () => {
       })
       .rpc();
 
-    confirmTx(tx);
+    await confirmTx(tx);
 
     const finalBalanceVault = await provider.connection.getBalance(vaultPda);
     const finalBalanceUser = await provider.connection.getBalance(user);
@@ -124,13 +124,47 @@ describe("pre-req-vault", () => {
       })
       .rpc();
 
-    confirmTx(tx);
+    await confirmTx(tx);
 
     const finalBalanceVault = await provider.connection.getBalance(vaultPda);
     const finalBalanceUser = await provider.connection.getBalance(user);
 
     expect(finalBalanceVault).to.equal(initialVaultBalance - withdrawAmount);
     expect(finalBalanceUser).to.be.greaterThan(intialUserBalance);
+
+    // Task 2's success criterion: the CPI must have created the registration
+    // program's ApplicationAccount and recorded the GitHub handle. Balances
+    // alone would still pass if the CPI had been left out entirely.
+    const registration = await provider.connection.getAccountInfo(
+      applicationAccount,
+    );
+
+    expect(registration, "the CPI did not create the application account").to
+      .not.be.null;
+    expect(registration.owner.toBase58()).to.equal(
+      applicationProgram.toBase58(),
+    );
+
+    // ApplicationAccount layout, per idls/registration.json:
+    // 8 discriminator | 32 user | 1 bump | 1 pre_req_ts | 1 pre_req_rs | 4 len + github
+    const recordedUser = new PublicKey(registration.data.subarray(8, 40));
+    const githubLen = registration.data.readUInt32LE(43);
+    const recordedGithub = registration.data
+      .subarray(47, 47 + githubLen)
+      .toString("utf8");
+
+    // Compare against the constant the program itself declares, which Anchor
+    // surfaces in the IDL — so this asserts the chain agrees with the source.
+    // Anchor camel-cases IDL names, so match on a normalised form.
+    const declared = program.idl.constants.find(
+      (c) => c.name.replace(/_/g, "").toLowerCase() === "githubusername",
+    );
+    const expectedGithub = JSON.parse(declared.value);
+
+    console.log(`      registered github: ${recordedGithub}`);
+
+    expect(recordedUser.toBase58()).to.equal(user.toBase58());
+    expect(recordedGithub).to.equal(expectedGithub);
   });
 
   it(" Close the vault and withdraw all the funds", async () => {
@@ -146,7 +180,7 @@ describe("pre-req-vault", () => {
       })
       .rpc();
 
-    confirmTx(tx);
+    await confirmTx(tx);
 
     expect(await provider.connection.getBalance(vaultPda)).to.equal(0);
 
