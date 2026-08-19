@@ -176,6 +176,31 @@ Program log: Registered GitHub handle `Anshumancanrock`
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
 
+### Proving the CPI actually ran
+
+The provided withdraw test only asserted balances, which meant it passed just as happily
+with the CPI removed entirely — I checked, by building a copy with the `initialize` call
+stripped out and running it: three tests green, no complaint.
+
+So the test now decodes the `ApplicationAccount` after the withdrawal and asserts the
+recorded user and handle, comparing the handle against the constant the program itself
+declares (Anchor surfaces `#[constant]` values in the IDL, so the assertion checks that
+the chain agrees with the source rather than against a second hardcoded copy):
+
+```
+✔ Initialize the vault
+✔ Deposilt 1 Sol in to the vault
+    registered github: Anshumancanrock
+✔  Withdraw 0.5 Sol from the vault
+✔  Close the vault and withdraw all the funds
+```
+
+Against the CPI-less build, that same assertion fails with
+`the CPI did not create the application account: expected null not to be null`.
+
+The three `confirmTx(tx)` calls in deposit, withdraw and close were also missing their
+`await`, which races the balance reads on a real cluster.
+
 ---
 
 ## Running it
