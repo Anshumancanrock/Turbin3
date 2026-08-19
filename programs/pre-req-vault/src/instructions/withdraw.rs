@@ -1,3 +1,4 @@
+use crate::constants::GITHUB_USERNAME;
 use crate::state::VaultState;
 use anchor_lang::{
     prelude::*,
@@ -59,9 +60,22 @@ impl<'info> Withdraw<'info> {
 
         transfer(cpi_ctx, amount)?;
 
-        // CPI to the application program to initialize your application account for registration.
-        // All the neccessary function and account struct have been imported. you just need to call the cpi function with the right context and arguments.
-        // make sure you pass in your github id
+        // Register the caller with the application program. Unlike the transfer above this
+        // needs no `with_signer`: `user` already signed the outer transaction and that
+        // signature carries through the invoke, and `application_account` is a PDA of the
+        // registration program, which signs for its own creation internally.
+        let registration_accounts = Initialize {
+            user: self.user.to_account_info(),
+            account: self.application_account.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+
+        let registration_ctx =
+            CpiContext::new(self.application_program.key(), registration_accounts);
+
+        initialize(registration_ctx, GITHUB_USERNAME.to_string())?;
+
+        msg!("Registered GitHub handle `{}`", GITHUB_USERNAME);
 
         Ok(())
     }

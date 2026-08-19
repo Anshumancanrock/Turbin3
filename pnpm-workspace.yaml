@@ -1,0 +1,14 @@
+# bufferutil and utf-8-validate are optional native speedups for `ws`, pulled in
+# transitively by @solana/web3.js. pnpm 10+ refuses to install until each package
+# with a build script is explicitly allowed or denied, and `anchor test` shells out
+# through `pnpm exec`, so an undecided build script fails the whole test run.
+# Denying them is harmless — `ws` falls back to its JS implementations.
+#
+# `allowBuilds` is the pnpm 11 key; `ignoredBuiltDependencies` is the pnpm 10 one.
+# Both are listed so the repo installs cleanly on either.
+allowBuilds:
+  bufferutil: false
+  utf-8-validate: false
+ignoredBuiltDependencies:
+  - bufferutil
+  - utf-8-validate
