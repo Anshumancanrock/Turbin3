@@ -8,7 +8,7 @@ also registers the caller with Turbin3's on-chain registration program via a CPI
 | Vault program (this repo, devnet) | `HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw` |
 | Registration program (provided, devnet) | `TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM` |
 | GitHub handle recorded | `Anshumancanrock` |
-| Anchor / Solana CLI | 1.1.2 / 4.2.0 |
+| Anchor / Solana CLI | 1.1.2 / 3.1.10 |
 
 ---
 
