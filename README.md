@@ -5,8 +5,8 @@ also registers the caller with Turbin3's on-chain registration program via a CPI
 
 | | |
 |---|---|
-| Vault program (this repo, devnet) | `HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw` |
-| Registration program (provided, devnet) | `TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM` |
+| Vault program (this repo) | [`HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw`](https://explorer.solana.com/address/HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw?cluster=devnet) |
+| Registration program (provided) | [`TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM`](https://explorer.solana.com/address/TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM?cluster=devnet) |
 | GitHub handle recorded | `Anshumancanrock` |
 | Anchor / Solana CLI | 1.1.2 / 3.1.10 |
 
@@ -30,9 +30,10 @@ The vault gives every wallet its own SOL holding account that only that wallet c
 withdraw from. There is no shared pool and no admin: everything is keyed off the
 user's public key, so two users can never touch each other's funds.
 
-Solana programs are stateless, so all of that state lives in accounts. This program
-uses two, both **PDAs** — addresses derived from seeds rather than from a private key,
-which is what lets the program sign for them.
+Solana programs are stateless, so all of that state lives in accounts. This program owns
+two of them and passes a third through to the registration program. All three are
+**PDAs** — addresses derived from seeds rather than from a private key, which is what
+lets a program sign for them.
 
 ### The accounts
 
@@ -175,6 +176,35 @@ Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM success
 Program log: Registered GitHub handle `Anshumancanrock`
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
+
+### A consequence worth being explicit about
+
+Because the registration program creates the account with `init` and the CPI is
+unconditional, **`withdraw` can only ever succeed once per wallet.** Every later call
+reverts when the inner `init` hits an account that already exists.
+
+That is not obvious from reading the diff, so I checked what it costs. Deposit 2 SOL,
+withdraw 0.5 (which registers), then try again:
+
+```
+deposited. vault = 2 SOL
+withdraw #1 OK (registered). vault = 1.5 SOL
+withdraw #2 FAILED as predicted
+still in vault: 1.5 SOL
+close OK. vault now = 0
+user recovered 1.50095548 SOL -> funds NOT trapped
+```
+
+So the vault degrades from "deposit and withdraw freely" to "deposit, withdraw once, then
+close" — but `close` does not perform the CPI, so it still drains the vault and refunds
+the rent. No funds are stranded.
+
+I left it unconditional on purpose. Guarding it with
+`if self.application_account.data_is_empty()` would keep `withdraw` reusable, but the task
+asks for a CPI to `initialize` on withdraw, and quietly skipping it would make the
+instruction's behaviour depend on hidden state. Given the registration is a one-time
+onboarding step, failing loudly is the more honest behaviour — and `close` is the intended
+exit anyway.
 
 ### Proving the CPI actually ran
 
