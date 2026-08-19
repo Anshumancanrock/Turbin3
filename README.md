@@ -93,6 +93,13 @@ being debited, treats the invoking program as its signer. That is the entire sec
 model of the vault: only a program that can produce the right seeds can spend from it,
 and the seeds contain the user's key.
 
+One sharp edge, inherited from the original design rather than introduced here: the
+`vault` is a system account, so it must end every transaction either empty or
+rent-exempt. Withdrawing an amount that would leave it holding between 1 and 890,879
+lamports fails with `insufficient funds for rent`. Withdrawing everything is
+what `close` is for; `withdraw` is for partial amounts that leave the vault comfortably
+above the ~0.00089 SOL minimum.
+
 ### State over time
 
 ```
