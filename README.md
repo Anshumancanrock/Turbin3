@@ -8,32 +8,9 @@ Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a G
 
 ## Architecture
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{
-  'primaryColor':'#e0f2fe','primaryBorderColor':'#0284c7','primaryTextColor':'#0c4a6e',
-  'lineColor':'#64748b','edgeLabelBackground':'#ffffff'}}}%%
-flowchart TD
-    U["User wallet<br/>the only signer"]
-    P["pre-req-vault program<br/>initialize · deposit · withdraw · close"]
-    VS["vault_state (our PDA)<br/>seeds: state + user<br/>stores both bumps"]
-    V["vault (our PDA)<br/>seeds: vault + vault_state<br/>holds the SOL"]
-    SP["System Program"]
-    REG["registration program<br/>TRBZ...KWDM"]
-    APP["application_account (their PDA)<br/>seeds: prereqs + user"]
+<img src="docs/diagram.png" alt="Architecture: the user signs a transaction to the pre-req-vault program, which owns the vault_state and vault PDAs, invokes the System Program to move lamports, and on withdraw invokes the registration program, which creates the application account.">
 
-    U -->|signs and sends| P
-    P -->|creates| VS
-    P -->|signs with seeds| V
-    P -->|CPI transfer| SP
-    SP -->|moves lamports| V
-    P -->|"CPI on withdraw only<br/>initialize(github)"| REG
-    REG -->|creates| APP
-
-    classDef ext fill:#fde8d0,stroke:#c2680f,color:#4a2c0a
-    class REG,APP ext
-```
-
-Rendered copy for linking: [`docs/diagram.png`](docs/diagram.png).
+Source for the diagram: [`docs/diagram.mmd`](docs/diagram.mmd). Regenerate with any mermaid renderer.
 
 One vault per wallet. Addresses are PDAs seeded with the user's key, so only that user can hit their vault.
 
