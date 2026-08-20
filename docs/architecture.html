@@ -450,8 +450,9 @@
     <h2><span class="num">FIG 2</span> Where the addresses come from</h2>
     <p class="lede">
       None of these three accounts has a private key. Each address is derived by hashing a
-      list of seeds together with a program ID until the result falls off the ed25519 curve.
-      That off-curve byte is the <em>bump</em>. Because the derivation is deterministic,
+      list of seeds plus a one-byte counter together with a program ID, counting down until
+      the result falls off the ed25519 curve. That counter is the <em>bump</em>. Because
+      the derivation is deterministic,
       anyone can recompute an address; because it is off-curve, only the owning program can
       authorise it.
     </p>
@@ -683,7 +684,8 @@
   <section>
     <h2><span class="num">FIG 6</span> The same call tree, as the chain records it</h2>
     <p class="lede">
-      Log output from a successful withdraw. Read the bracketed depths against Fig 4.
+      Verbatim log from the devnet withdrawal, transaction
+      <code>43uiqRQi…dmdj93sC</code>. Read the bracketed depths against Fig 4.
     </p>
 
 <pre>Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw invoke [1]
@@ -694,8 +696,10 @@ Program 11111111111111111111111111111111 success
 Program log: Instruction: Initialize
 Program 11111111111111111111111111111111 invoke [3]            <span class="dim">← registration creates its PDA</span>
 Program 11111111111111111111111111111111 success
+Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM consumed 12966 of 184781 compute units
 Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM success
 Program log: Registered GitHub handle `Anshumancanrock`
+Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw consumed 28918 of 200000 compute units
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success</pre>
   </section>
 
