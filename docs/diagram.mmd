@@ -3,7 +3,7 @@
   'lineColor':'#64748b','edgeLabelBackground':'#ffffff'}}}%%
 flowchart TD
     U["User wallet<br/>the only signer and fee payer"]
-    P["pre-req-vault program<br/>HZbxjG93...wmsw<br/>1 initialize · 2 deposit · 3 withdraw · 4 close"]
+    P["pre-req-vault program<br/>HZbxjG93...wmsw<br/>call order: 1 initialize · 2 deposit · 3 withdraw · 4 close"]
     VS["vault_state (our PDA)<br/>seeds: state + user<br/>stores vault_bump + state_bump"]
     SP["System Program<br/>moves every lamport"]
     V["vault (our PDA)<br/>seeds: vault + vault_state<br/>SystemAccount, holds the SOL"]
@@ -11,10 +11,10 @@ flowchart TD
     APP["application_account (their PDA)<br/>seeds: prereqs + user<br/>records: Anshumancanrock"]
 
     U -->|calls an instruction| P
-    P -->|"1 creates it · 4 closes it, rent back to user"| VS
-    P -->|"CPI on 2, 3 and 4"| SP
-    P -->|"CPI on 3 only, the Task 2 call<br/>initialize(github), no extra signer"| REG
-    SP -->|"2 SOL in: the user's own signature<br/>3 and 4 SOL out: program signs with vault seeds"| V
+    P -->|"step 1 creates it, step 4 closes it<br/>and refunds the rent"| VS
+    P -->|"CPI on steps 2, 3, 4"| SP
+    P -->|"CPI on step 3 only, the Task 2 call<br/>initialize(github), no extra signer"| REG
+    SP -->|"step 2, SOL in: the user's own signature<br/>steps 3 and 4, SOL out: program signs with vault seeds"| V
     REG -->|creates| APP
 
     classDef ext fill:#fde8d0,stroke:#c2680f,color:#4a2c0a
