@@ -9,6 +9,9 @@ Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a G
 ## Architecture
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{
+  'primaryColor':'#e0f2fe','primaryBorderColor':'#0284c7','primaryTextColor':'#0c4a6e',
+  'lineColor':'#64748b','clusterBkg':'#f0f9ff','clusterBorder':'#7dd3fc','edgeLabelBackground':'#ffffff'}}}%%
 flowchart TD
     U["User wallet<br/>the only signer"]
     P["pre-req-vault program<br/>initialize · deposit · withdraw · close"]
@@ -30,10 +33,8 @@ flowchart TD
     P -->|"CPI on withdraw only<br/>initialize(github)"| REG
     REG -->|creates| APP
 
-    classDef cpi fill:#f6e7d6,stroke:#b0641f,stroke-width:2px,color:#13222e
-    classDef pda fill:#d7e8ed,stroke:#226c84,color:#13222e
+    classDef cpi fill:#fde8d0,stroke:#c2680f,stroke-width:2px,color:#4a2c0a
     class REG,APP cpi
-    class VS,V pda
 ```
 
 Rendered copy for linking: [`docs/diagram.png`](docs/diagram.png).
