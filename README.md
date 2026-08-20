@@ -33,7 +33,7 @@ flowchart TD
     P -->|"CPI on withdraw only<br/>initialize(github)"| REG
     REG -->|creates| APP
 
-    classDef cpi fill:#fde8d0,stroke:#c2680f,stroke-width:2px,color:#4a2c0a
+    classDef cpi fill:#fde8d0,stroke:#c2680f,color:#4a2c0a
     class REG,APP cpi
 ```
 
