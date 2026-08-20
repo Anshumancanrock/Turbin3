@@ -336,8 +336,8 @@
       <h1>pre-req-vault</h1>
       <p class="standfirst">
         A per-wallet SOL vault where custody rests on program-derived addresses rather than
-        on any key a person holds — and where withdrawing also registers the caller with a
-        second program, through a cross-program invocation.
+        on any key a person holds. Withdrawing also registers the caller with a second
+        program, through a cross-program invocation.
       </p>
     </div>
     <dl class="fields">
@@ -365,8 +365,8 @@
     <h2><span class="num">FIG 1</span> What talks to what</h2>
     <p class="lede">
       Three programs and four accounts. The vault program owns the two accounts that hold a
-      user's position; it never writes to lamports or to the registration record directly —
-      it asks the programs that own them.
+      user's position. It never writes to lamports or to the registration record itself.
+      It asks the programs that own them.
     </p>
 
     <figure>
@@ -450,8 +450,8 @@
     <h2><span class="num">FIG 2</span> Where the addresses come from</h2>
     <p class="lede">
       None of these three accounts has a private key. Each address is derived by hashing a
-      list of seeds together with a program ID until the result falls off the ed25519 curve —
-      that off-curve byte is the <em>bump</em>. Because the derivation is deterministic,
+      list of seeds together with a program ID until the result falls off the ed25519 curve.
+      That off-curve byte is the <em>bump</em>. Because the derivation is deterministic,
       anyone can recompute an address; because it is off-curve, only the owning program can
       authorise it.
     </p>
@@ -512,11 +512,11 @@
         <text class="t-sub"  x="628" y="260">one per wallet, ever</text>
       </svg>
       <figcaption>
-        Row two is the detail worth noticing: <code>vault</code> is seeded by the
-        <em>vault_state address</em>, not by the user's key, so the derivation chains
+        Look at row two. <code>vault</code> is seeded by the <em>vault_state address</em>,
+        not by the user's key, so the derivation chains
         <code>user → vault_state → vault</code>. Row three is derived under a different
-        program ID, which is why the vault program can pass that account along but can never
-        write to it.
+        program ID, which is why the vault program can pass that account along but can
+        never write to it.
       </figcaption>
     </figure>
   </section>
@@ -525,7 +525,7 @@
   <section>
     <h2><span class="num">FIG 3</span> The lifecycle</h2>
     <p class="lede">
-      Four instructions, run in order. The numbering is the actual sequence — deposit cannot
+      Four instructions, run in order. The numbering is the real sequence: deposit cannot
       run before initialize has created the state account, and close is terminal.
     </p>
 
@@ -535,7 +535,8 @@
         <div class="step-body">
           <p>Creates <code>vault_state</code> with the user as payer, then writes both bumps into
           it. Anchor finds the canonical bumps once here so that every later instruction can read
-          them back instead of re-deriving — cheaper in compute, and it pins the addresses.</p>
+          them back instead of re-deriving, which is cheaper in compute and pins the
+          addresses.</p>
           <span class="state">vault_state: created · vault: 0 lamports</span>
         </div>
       </div>
@@ -553,8 +554,9 @@
       <div class="step is-cpi">
         <div class="step-ix"><span class="ord">STEP 03</span><code>withdraw</code></div>
         <div class="step-body">
-          <p>Moves <code>amount</code> back out of the vault — this time the program signs as the
-          PDA — and then registers the caller with the registration program. See Fig 4.</p>
+          <p>Moves <code>amount</code> back out of the vault, this time with the program
+          signing as the PDA, then registers the caller with the registration program.
+          See Fig 4.</p>
           <span class="state">vault: − amount · application_account: created (once only)</span>
         </div>
       </div>
@@ -618,13 +620,13 @@
 
         <!-- outcome strip -->
         <line x1="32" y1="348" x2="868" y2="348" stroke="var(--rule)" stroke-width="1"></line>
-        <text class="t-body" x="32" y="372">Both must succeed. If registration fails, the transfer is rolled back too — a transaction is atomic.</text>
+        <text class="t-body" x="32" y="372">Both must succeed. If registration fails the transfer rolls back too, because a transaction is atomic.</text>
       </svg>
       <figcaption>
         The two invocations differ in who authorises them. The transfer debits a PDA, so the
         program must present the seeds that derive it. The registration call debits nothing of
-        the vault's, so it needs no seeds — the user's original signature is still in scope at
-        depth 2, and the registration program signs for its own PDA at depth 3.
+        the vault's, so it needs no seeds. The user's original signature is still in scope
+        at depth 2, and the registration program signs for its own PDA at depth 3.
       </figcaption>
     </figure>
   </section>
@@ -633,8 +635,8 @@
   <section>
     <h2><span class="num">FIG 5</span> Who authorises each move</h2>
     <p class="lede">
-      The one idea worth taking away. A PDA has no private key, so a program proves authority
-      over it by handing the runtime the seeds that derive the address.
+      A PDA has no private key, so a program proves authority over it by handing the runtime
+      the seeds that derive the address.
     </p>
 
     <div class="tablewrap">
