@@ -60,10 +60,8 @@ impl<'info> Withdraw<'info> {
 
         transfer(cpi_ctx, amount)?;
 
-        // Register the caller with the application program. Unlike the transfer above this
-        // needs no `with_signer`: `user` already signed the outer transaction and that
-        // signature carries through the invoke, and `application_account` is a PDA of the
-        // registration program, which signs for its own creation internally.
+        // No `with_signer` here: `user` signed the outer transaction and that carries
+        // through the invoke. The account is the registration program's own PDA.
         let registration_accounts = Initialize {
             user: self.user.to_account_info(),
             account: self.application_account.to_account_info(),

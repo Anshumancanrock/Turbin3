@@ -8,10 +8,26 @@ Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a G
 
 ## Architecture
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagram-dark.png">
-  <img src="docs/diagram-light.png" alt="Vault architecture: user, program, PDAs, and the registration CPI.">
-</picture>
+```mermaid
+flowchart TD
+    U["User wallet<br/>the only signer"]
+    P["pre-req-vault program<br/>initialize, deposit, withdraw, close"]
+    VS["vault_state PDA<br/>seeds: state + user<br/>stores both bumps"]
+    V["vault PDA<br/>seeds: vault + vault_state<br/>holds the SOL"]
+    SP["System Program"]
+    REG["registration program<br/>TRBZ...KWDM"]
+    APP["application_account PDA<br/>seeds: prereqs + user"]
+
+    U -->|calls an instruction| P
+    P -->|owns| VS
+    P -->|owns, signs with seeds| V
+    P -->|CPI transfer| SP
+    SP -->|moves lamports| V
+    P -->|CPI on withdraw: initialize github| REG
+    REG -->|creates| APP
+```
+
+Rendered copy for linking: [`docs/diagram.png`](docs/diagram.png).
 
 One vault per wallet. Addresses are PDAs seeded with the user's key, so only that user can hit their vault.
 
@@ -49,8 +65,6 @@ Program log: Registered GitHub handle `Anshumancanrock`
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw consumed 28918 of 200000 compute units
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
-
-Interactive version: [`docs/diagram.html`](docs/diagram.html).
 
 ## Setup
 
