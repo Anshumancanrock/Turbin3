@@ -84,7 +84,10 @@ anchor test --provider.cluster localnet --skip-local-validator
 
 ## Caveats
 
-- `withdraw` works once per wallet. Registration `init`s the account and the CPI always runs, so a second withdraw fails. `close` still returns remaining SOL and rent.
-- Tests decode `ApplicationAccount` (owner, discriminator, user, github) rather than checking balances only.
-- `withdraw` has no `amount > 0` guard, so `withdraw(0)` moves nothing but still fires the CPI. Since the handle is a program constant, anyone who signs a `withdraw` here is registered as `Anshumancanrock` and spends their own one-time registration.
-- The vault is a 0-byte system account, so a `withdraw` leaving it between 1 and 890,879 lamports fails on rent. `close` is how you take the rest.
+Things I checked rather than assumed:
+
+- **`withdraw` only works once per wallet.** Registration `init`s the account and the CPI is unconditional, so the second call reverts. I tested whether that strands funds: deposit 2 SOL, withdraw 0.5, retry fails, 1.5 SOL still sitting in the vault, and `close` recovered all of it. `close` performs no CPI, so it stays available.
+- **`withdraw(0)` still burns the registration.** There's no `amount > 0` guard, so a zero-value withdraw moves nothing and fires the CPI anyway. The handle is a program constant, so anyone who signs a `withdraw` here gets recorded as `Anshumancanrock` and spends their own one-time registration.
+- **Draining the vault fully is fine; draining it nearly fully is not.** It's a 0-byte system account, so it has to end a transaction either empty or rent-exempt. Leaving between 1 and 890,879 lamports fails with `insufficient funds for rent`. A full drain deallocates the account and `close` still works after it.
+- **The test asserts the CPI, not just balances.** The version I was given passed with the CPI stripped out entirely, which I confirmed by building that and running it. It now decodes the `ApplicationAccount` and checks the discriminator, user and handle against the IDL.
+- **Left as found:** `pnpm lint` fails because the repo pins prettier 2 while the sources were formatted by prettier 3, the LiteSVM test in `test_initialize.rs` ships commented out so `cargo test` runs nothing, and `constants.rs`/`error.rs` still carry counter scaffolding from the template. All unrelated to the CPI, so I left the diff focused.
