@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pre-req-vault</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.25rem 4rem;
+    }
+    h1 { font-size: 1.2rem; margin: 0 0 0.2rem; }
+    p { margin: 0 0 1.5rem; opacity: 0.7; font-size: 0.95rem; }
+    #diagram { overflow-x: auto; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <h1>pre-req-vault</h1>
+  <p>architecture · <a href="https://github.com/Anshumancanrock/Turbin3">repo</a></p>
+  <div id="diagram">loading diagram…</div>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false });
+    const src = await fetch("./diagram.mmd").then((r) => r.text());
+    const { svg } = await mermaid.render("vault", src);
+    document.getElementById("diagram").innerHTML = svg;
+  </script>
+</body>
+</html>

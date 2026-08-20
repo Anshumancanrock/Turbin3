@@ -10,7 +10,7 @@ Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a G
 
 <img src="docs/diagram.png" alt="Vault architecture diagram">
 
-[`docs/diagram.mmd`](docs/diagram.mmd)
+[Live diagram](https://anshumancanrock.github.io/Turbin3/) · [`docs/diagram.mmd`](docs/diagram.mmd)
 
 One vault per wallet. Addresses are PDAs seeded with the user's key, so only that user can hit their vault.
 
