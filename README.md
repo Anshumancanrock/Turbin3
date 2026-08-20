@@ -1,49 +1,38 @@
 # pre-req-vault
 
-An Anchor SOL vault. The `withdraw` instruction was extended so that withdrawing also
-registers the caller with Turbin3's registration program through a CPI.
+Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a GitHub handle.
 
-| | |
-|---|---|
-| Vault program | [`HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw`](https://explorer.solana.com/address/HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw?cluster=devnet) |
-| Registration tx | [`43uiqRQi…dmdj93sC`](https://explorer.solana.com/tx/43uiqRQiTCEp4sgENZzZ9DYEgmXsPxpwtyQZKSg5W26Zh9ryE7fhVLHXyjrQKbmE3TchVGt2krbwSf8gdmdj93sC?cluster=devnet) |
-| GitHub handle recorded | `Anshumancanrock` |
-| Cluster | devnet, Anchor 1.1.2 |
+- **Program (devnet):** [`HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw`](https://explorer.solana.com/address/HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw?cluster=devnet)
+- **Registration tx:** [`43uiqRQi…dmdj93sC`](https://explorer.solana.com/tx/43uiqRQiTCEp4sgENZzZ9DYEgmXsPxpwtyQZKSg5W26Zh9ryE7fhVLHXyjrQKbmE3TchVGt2krbwSf8gdmdj93sC?cluster=devnet)
+- **Handle:** `Anshumancanrock`
 
-## The CPI
+## Architecture
 
-```rust
-let registration_accounts = Initialize {
-    user: self.user.to_account_info(),
-    account: self.application_account.to_account_info(),
-    system_program: self.system_program.to_account_info(),
-};
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagram-dark.png">
+  <img src="docs/diagram-light.png" alt="Vault architecture: user, program, PDAs, and the registration CPI.">
+</picture>
 
-let registration_ctx = CpiContext::new(self.application_program.key(), registration_accounts);
+One vault per wallet. Addresses are PDAs seeded with the user's key, so only that user can hit their vault.
 
-initialize(registration_ctx, GITHUB_USERNAME.to_string())?;
+| Account | Seeds | Owner |
+|---|---|---|
+| `vault_state` | `["state", user]` | this program |
+| `vault` | `["vault", vault_state]` | System Program |
+| `application_account` | `["prereqs", user]` | registration program |
+
+```
+initialize   create vault_state, store bumps
+deposit      SOL in  (user signature)
+withdraw     SOL out (vault PDA) + CPI registration.initialize
+close        drain vault, close vault_state
 ```
 
-Full file: [`withdraw.rs`](programs/pre-req-vault/src/instructions/withdraw.rs). Two things
-that are easy to get wrong here:
+`deposit` spends from the user's wallet, so their signature is enough. `withdraw` and `close` spend from a PDA, so the program signs with the vault seeds.
 
-**No `with_signer`.** The SOL transfer just above it needs one, because it debits a PDA.
-This call does not. `user` already signed the outer transaction and that signature
-propagates through the invoke, so the registration program can use it as the payer for
-its `init`.
+The CPI is in [`withdraw.rs`](programs/pre-req-vault/src/instructions/withdraw.rs). `user` already signed the outer transaction, so that call does not use `with_signer`. The handle is a program constant.
 
-**Anchor 1.x takes a `Pubkey`, not an `AccountInfo`.** The signature is
-`CpiContext::new(program_id: Pubkey, accounts: T)`, hence `.key()`. Most tutorials still
-show the old 0.2x form.
-
-The handle is a `#[constant]` rather than an instruction argument, which leaves the
-`withdraw` signature and the provided tests unchanged.
-
-### Proof it ran
-
-From the devnet transaction linked above. Bracketed numbers are invocation depth, so
-`TRBZ…` at `[2]` underneath `HZbx…` is the registration happening *inside* this program
-rather than as a direct call:
+On-chain the registration invoke sits at depth `[2]` under this program, not as a sibling instruction:
 
 ```
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw invoke [1]
@@ -54,68 +43,33 @@ Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM invoke [2]
 Program log: Instruction: Initialize
 Program 11111111111111111111111111111111 invoke [3]
 Program 11111111111111111111111111111111 success
-Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM consumed 12966 of 184781 compute units
 Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM success
-Program log: Registered GitHub handle `Anshumancanrock`
-Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw consumed 28918 of 200000 compute units
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
 
-## How the vault works
+Interactive version: [`docs/diagram.html`](docs/diagram.html).
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagram-dark.png">
-  <img src="docs/diagram-light.png" alt="Architecture diagram: the user signs a transaction to the pre-req-vault program, which owns the vault_state and vault PDAs, invokes the System Program to move lamports, and on withdraw invokes the registration program, which creates the application account.">
-</picture>
-
-Every wallet gets its own vault. There is no admin key and no access-control check, because
-both addresses are PDAs derived from seeds containing the user's public key, so only that
-user's vault can ever be derived.
-
-Three accounts:
-
-- **`vault_state`**, seeds `["state", user]`. Stores the two bumps so later instructions
-  read them back instead of re-deriving, which costs compute.
-- **`vault`**, seeds `["vault", vault_state]`. Holds the lamports. Seeded by the
-  *vault_state address*, not the user's key, so derivation chains user to state to vault.
-- **`application_account`**, seeds `["prereqs", user]`, owned by the registration program.
-  Created by the CPI. This program only passes it through.
-
-The four instructions are `initialize`, `deposit`, `withdraw` and `close`. The distinction
-that matters is who authorises each SOL movement. `deposit` moves lamports out of the
-user's own wallet, so their signature is enough. `withdraw` and `close` move lamports out
-of a PDA, which has no private key, so the program proves authority by passing the seeds
-that derive the address:
-
-```rust
-CpiContext::new_with_signer(System::id(), cpi_accounts, &[&seeds[..]])
-```
-
-Source: [`docs/diagram.html`](docs/diagram.html). If you want more depth,
-[`docs/architecture.html`](docs/architecture.html) breaks the same system into six figures,
-covering the PDA derivation chains, the lifecycle step by step, and the full CPI call tree.
-
-## Running it
+## Setup
 
 ```bash
 pnpm install
 anchor build
-anchor keys sync          # required on a fresh clone, see Notes
+anchor keys sync          # keypair is gitignored; skip this and the program id drifts
 solana config set --url devnet
-solana airdrop 3          # ~2.3 SOL is actually needed
+solana airdrop 3
 anchor deploy
 anchor test --skip-deploy
 ```
 
-Or `./scripts/deploy-devnet.sh`, which does the same with guard rails: it stops if the
-wallet is already registered, reports buffers stranded by a failed deploy, and passes
-`--use-rpc` so the chunk writes avoid validator TPUs.
+`./scripts/deploy-devnet.sh` does the same and exits early if this wallet is already registered.
 
-Check the result with `pnpm exec ts-node scripts/check-registration.ts`, which decodes the
-`ApplicationAccount` straight off the cluster.
+Verify on-chain:
 
-To rehearse without spending the one-shot registration, run a local validator with the
-real registration program cloned into it:
+```bash
+pnpm exec ts-node scripts/check-registration.ts
+```
+
+Local replay without spending the one-shot registration — clone the live registration program into a validator:
 
 ```bash
 solana-test-validator --reset \
@@ -125,33 +79,7 @@ solana-test-validator --reset \
 anchor test --provider.cluster localnet --skip-local-validator
 ```
 
-That tests against the genuine registration bytecode instead of a mock.
+## Caveats
 
-## Notes
-
-**`withdraw` only works once per wallet.** The registration program creates the account
-with `init` and the CPI is unconditional, so every later `withdraw` reverts. I checked
-whether that traps funds: it does not, because `close` performs no CPI and still drains
-the vault and refunds the rent. Guarding the CPI with `data_is_empty()` would keep
-`withdraw` reusable, but then the instruction would silently behave differently depending
-on history, so I left it failing loudly.
-
-**The test now checks the CPI, not just balances.** The provided test asserted balances
-only. I built a copy of the program with the CPI stripped out and it still passed, so the
-test could not detect the one thing this task is about. It now decodes the
-`ApplicationAccount` and compares the handle against the constant in the IDL.
-
-**A fresh clone cannot deploy this as-is.** The program keypair lives under gitignored
-`target/`, so `anchor build` mints a new one. The IDL would still advertise the deployed
-address while `anchor deploy` targets the new key, and the tests follow the IDL, so
-everything would appear to pass while your SOL paid for an orphan copy. Run
-`anchor keys sync` first.
-
-**Left as found:** `pnpm lint` fails because the repo pins prettier 2 while the sources
-were formatted by prettier 3. The LiteSVM test in `test_initialize.rs` ships fully
-commented out, so `cargo test` runs zero tests. `constants.rs` and `error.rs` still carry
-unrelated counter scaffolding from the original template.
-
-**The handle is hardcoded**, so any wallet calling this deployed program gets registered as
-`Anshumancanrock`. It costs the caller their own registration and gains them nothing, and
-it follows from the design the task specifies.
+- `withdraw` works once per wallet. Registration `init`s the account and the CPI always runs, so a second withdraw fails. `close` still returns remaining SOL and rent.
+- Tests decode `ApplicationAccount` (owner, user, github) rather than checking balances only.

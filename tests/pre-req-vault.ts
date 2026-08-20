@@ -10,6 +10,12 @@ import {
 import NodeWallet from "@anchor-lang/core/dist/cjs/nodewallet";
 import { BN } from "bn.js";
 import { expect } from "chai";
+import * as fs from "fs";
+import * as path from "path";
+
+const registrationIdl = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "../idls/registration.json"), "utf8"),
+);
 
 const commitement: Commitment = "confirmed";
 
@@ -147,6 +153,16 @@ describe("pre-req-vault", () => {
 
     // ApplicationAccount layout, per idls/registration.json:
     // 8 discriminator | 32 user | 1 bump | 1 pre_req_ts | 1 pre_req_rs | 4 len + github
+    // Check the discriminator before trusting those offsets. The account is 72
+    // bytes and the handle only fills 62, so a different account type would
+    // decode into garbage rather than running off the end of the buffer.
+    const expectedDiscriminator = Buffer.from(
+      registrationIdl.accounts.find((a) => a.name === "ApplicationAccount")
+        .discriminator,
+    );
+    expect(registration.data.subarray(0, 8).equals(expectedDiscriminator)).to.be
+      .true;
+
     const recordedUser = new PublicKey(registration.data.subarray(8, 40));
     const githubLen = registration.data.readUInt32LE(43);
     const recordedGithub = registration.data
