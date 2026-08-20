@@ -64,8 +64,8 @@ Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ## How the vault works
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.png">
-  <img src="docs/architecture-light.png" alt="Architecture diagram: the user signs a transaction to the pre-req-vault program, which owns the vault_state and vault PDAs, invokes the System Program to move lamports, and invokes the registration program to create the application account.">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagram-dark.png">
+  <img src="docs/diagram-light.png" alt="Architecture diagram: the user signs a transaction to the pre-req-vault program, which owns the vault_state and vault PDAs, invokes the System Program to move lamports, and on withdraw invokes the registration program, which creates the application account.">
 </picture>
 
 Every wallet gets its own vault. There is no admin key and no access-control check, because
@@ -91,8 +91,9 @@ that derive the address:
 CpiContext::new_with_signer(System::id(), cpi_accounts, &[&seeds[..]])
 ```
 
-[`docs/architecture.html`](docs/architecture.html) has the full diagram with the account
-derivations and call tree drawn out.
+Source: [`docs/diagram.html`](docs/diagram.html). If you want more depth,
+[`docs/architecture.html`](docs/architecture.html) breaks the same system into six figures,
+covering the PDA derivation chains, the lifecycle step by step, and the full CPI call tree.
 
 ## Running it
 
