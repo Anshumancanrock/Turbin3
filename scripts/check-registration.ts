@@ -1,10 +1,5 @@
 /**
- * Reads the ApplicationAccount that the vault's `withdraw` CPI created in the
- * registration program and prints its decoded contents.
- *
- *   pnpm exec ts-node scripts/check-registration.ts [cluster-url] [wallet-pubkey]
- *
- * Defaults to devnet and the pubkey in ~/.config/solana/id.json.
+ * pnpm exec ts-node scripts/check-registration.ts [cluster-url] [wallet-pubkey]
  */
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
 import * as fs from "fs";
@@ -15,8 +10,6 @@ const REGISTRATION_PROGRAM = new PublicKey(
   "TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM",
 );
 
-// The 8-byte tag Anchor writes at the head of every account it owns, read from
-// the IDL rather than copied, so there is only one source of truth.
 function applicationAccountDiscriminator(): number[] {
   const idl = JSON.parse(
     fs.readFileSync(path.join(__dirname, "../idls/registration.json"), "utf8"),
@@ -24,18 +17,8 @@ function applicationAccountDiscriminator(): number[] {
   return idl.accounts.find((a) => a.name === "ApplicationAccount").discriminator;
 }
 
-// ApplicationAccount, per idls/registration.json:
-//   [0..8]   anchor discriminator
-//   [8..40]  user: pubkey
-//   [40]     bump: u8
-//   [41]     pre_req_ts: bool
-//   [42]     pre_req_rs: bool
-//   [43..47] github length (u32 LE), then the utf-8 bytes
+// 8 disc | 32 user | 1 bump | 1 ts | 1 rs | 4 len + github
 function decodeApplicationAccount(data: Buffer) {
-  // Worth checking rather than assuming: the account is 72 bytes but the handle
-  // only fills 62 of them, so a different account type would not necessarily
-  // run past the end of the buffer. It would decode into plausible-looking
-  // garbage instead of throwing.
   const expected = Buffer.from(applicationAccountDiscriminator());
   if (!data.subarray(0, 8).equals(expected)) {
     throw new Error(

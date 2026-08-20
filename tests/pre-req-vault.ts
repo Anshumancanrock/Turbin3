@@ -138,9 +138,6 @@ describe("pre-req-vault", () => {
     expect(finalBalanceVault).to.equal(initialVaultBalance - withdrawAmount);
     expect(finalBalanceUser).to.be.greaterThan(intialUserBalance);
 
-    // Task 2's success criterion: the CPI must have created the registration
-    // program's ApplicationAccount and recorded the GitHub handle. Balances
-    // alone would still pass if the CPI had been left out entirely.
     const registration = await provider.connection.getAccountInfo(
       applicationAccount,
     );
@@ -151,11 +148,7 @@ describe("pre-req-vault", () => {
       applicationProgram.toBase58(),
     );
 
-    // ApplicationAccount layout, per idls/registration.json:
-    // 8 discriminator | 32 user | 1 bump | 1 pre_req_ts | 1 pre_req_rs | 4 len + github
-    // Check the discriminator before trusting those offsets. The account is 72
-    // bytes and the handle only fills 62, so a different account type would
-    // decode into garbage rather than running off the end of the buffer.
+    // 8 disc | 32 user | 1 bump | 1 pre_req_ts | 1 pre_req_rs | 4 len + github
     const expectedDiscriminator = Buffer.from(
       registrationIdl.accounts.find((a) => a.name === "ApplicationAccount")
         .discriminator,
@@ -169,9 +162,6 @@ describe("pre-req-vault", () => {
       .subarray(47, 47 + githubLen)
       .toString("utf8");
 
-    // Compare against the constant the program itself declares, which Anchor
-    // surfaces in the IDL — so this asserts the chain agrees with the source.
-    // Anchor camel-cases IDL names, so match on a normalised form.
     const declared = program.idl.constants.find(
       (c) => c.name.replace(/_/g, "").toLowerCase() === "githubusername",
     );
