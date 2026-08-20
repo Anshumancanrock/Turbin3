@@ -11,20 +11,29 @@ Anchor SOL vault. `withdraw` CPIs Turbin3's registration program and records a G
 ```mermaid
 flowchart TD
     U["User wallet<br/>the only signer"]
-    P["pre-req-vault program<br/>initialize, deposit, withdraw, close"]
-    VS["vault_state PDA<br/>seeds: state + user<br/>stores both bumps"]
-    V["vault PDA<br/>seeds: vault + vault_state<br/>holds the SOL"]
+    P["pre-req-vault program<br/>initialize · deposit · withdraw · close"]
+
+    subgraph owned ["PDAs owned by this program"]
+        VS["vault_state<br/>seeds: state + user<br/>stores both bumps"]
+        V["vault<br/>seeds: vault + vault_state<br/>holds the SOL"]
+    end
+
     SP["System Program"]
     REG["registration program<br/>TRBZ...KWDM"]
-    APP["application_account PDA<br/>seeds: prereqs + user"]
+    APP["application_account<br/>seeds: prereqs + user"]
 
-    U -->|calls an instruction| P
-    P -->|owns| VS
-    P -->|owns, signs with seeds| V
+    U -->|signs and sends| P
+    P -->|creates| VS
+    P -->|signs with seeds| V
     P -->|CPI transfer| SP
     SP -->|moves lamports| V
-    P -->|CPI on withdraw: initialize github| REG
+    P -->|"CPI on withdraw only<br/>initialize(github)"| REG
     REG -->|creates| APP
+
+    classDef cpi fill:#f6e7d6,stroke:#b0641f,stroke-width:2px,color:#13222e
+    classDef pda fill:#d7e8ed,stroke:#226c84,color:#13222e
+    class REG,APP cpi
+    class VS,V pda
 ```
 
 Rendered copy for linking: [`docs/diagram.png`](docs/diagram.png).
