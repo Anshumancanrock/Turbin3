@@ -5,17 +5,16 @@ flowchart TD
     U["User wallet<br/>the only signer and fee payer"]
     P["pre-req-vault program<br/>HZbxjG93...wmsw<br/>1 initialize · 2 deposit · 3 withdraw · 4 close"]
     VS["vault_state (our PDA)<br/>seeds: state + user<br/>stores vault_bump + state_bump"]
+    SP["System Program<br/>moves every lamport"]
     V["vault (our PDA)<br/>seeds: vault + vault_state<br/>SystemAccount, holds the SOL"]
-    SP["System Program<br/>executes every lamport move"]
     REG["registration program<br/>TRBZyQHB...KWDM"]
     APP["application_account (their PDA)<br/>seeds: prereqs + user<br/>records: Anshumancanrock"]
 
     U -->|calls an instruction| P
-    P -->|"1 creates it, 4 closes it and refunds rent"| VS
-    U -->|"2 deposit: the user's own signature"| V
-    V -->|"3 withdraw part, 4 close all<br/>program signs with the vault seeds"| U
-    P -.->|"every transfer is a CPI to"| SP
-    P -->|"3 withdraw only, the Task 2 CPI<br/>initialize(github), no extra signer"| REG
+    P -->|"1 creates it · 4 closes it, rent back to user"| VS
+    P -->|"CPI on 2, 3 and 4"| SP
+    P -->|"CPI on 3 only, the Task 2 call<br/>initialize(github), no extra signer"| REG
+    SP -->|"2 SOL in: the user's own signature<br/>3 and 4 SOL out: program signs with vault seeds"| V
     REG -->|creates| APP
 
     classDef ext fill:#fde8d0,stroke:#c2680f,color:#4a2c0a
