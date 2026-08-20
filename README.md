@@ -166,21 +166,26 @@ unchanged.
 
 ### What the CPI looks like on-chain
 
-Log output from a successful `withdraw`. The nesting depth in brackets is the CPI
-chain: this program at `[1]`, the two programs it invokes at `[2]`, and the System
-Program that the registration program itself invokes at `[3]`.
+Log output from the actual devnet withdrawal
+([`43uiqRQi…dmdj93sC`](https://explorer.solana.com/tx/43uiqRQiTCEp4sgENZzZ9DYEgmXsPxpwtyQZKSg5W26Zh9ryE7fhVLHXyjrQKbmE3TchVGt2krbwSf8gdmdj93sC?cluster=devnet),
+finalized). The nesting depth in brackets is the CPI chain: this program at `[1]`, the two
+programs it invokes at `[2]`, and the System Program that the registration program itself
+invokes at `[3]`. That `TRBZ…` sits at depth `[2]` under `HZbx…` is the proof the
+registration went through this program rather than a direct call.
 
 ```
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw invoke [1]
 Program log: Instruction: Withdraw
-Program 11111111111111111111111111111111 invoke [2]          ← transfer vault → user
+Program 11111111111111111111111111111111 invoke [2]            ← transfer vault → user
 Program 11111111111111111111111111111111 success
-Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM invoke [2] ← registration CPI
+Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM invoke [2]  ← the registration CPI
 Program log: Instruction: Initialize
-Program 11111111111111111111111111111111 invoke [3]          ← registration creates its PDA
+Program 11111111111111111111111111111111 invoke [3]            ← registration creates its PDA
 Program 11111111111111111111111111111111 success
+Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM consumed 12966 of 184781 compute units
 Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM success
 Program log: Registered GitHub handle `Anshumancanrock`
+Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw consumed 28918 of 200000 compute units
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
 
