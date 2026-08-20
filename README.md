@@ -43,7 +43,10 @@ Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM invoke [2]
 Program log: Instruction: Initialize
 Program 11111111111111111111111111111111 invoke [3]
 Program 11111111111111111111111111111111 success
+Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM consumed 12966 of 184781 compute units
 Program TRBZyQHB3m68FGeVsqTK39Wm4xejadjVhP5MAZaKWDM success
+Program log: Registered GitHub handle `Anshumancanrock`
+Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw consumed 28918 of 200000 compute units
 Program HZbxjG93btfbrLs9r55hDSg3et4tX3Ktm5uLAVJjwmsw success
 ```
 
