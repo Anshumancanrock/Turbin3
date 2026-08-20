@@ -85,4 +85,6 @@ anchor test --provider.cluster localnet --skip-local-validator
 ## Caveats
 
 - `withdraw` works once per wallet. Registration `init`s the account and the CPI always runs, so a second withdraw fails. `close` still returns remaining SOL and rent.
-- Tests decode `ApplicationAccount` (owner, user, github) rather than checking balances only.
+- Tests decode `ApplicationAccount` (owner, discriminator, user, github) rather than checking balances only.
+- `withdraw` has no `amount > 0` guard, so `withdraw(0)` moves nothing but still fires the CPI. Since the handle is a program constant, anyone who signs a `withdraw` here is registered as `Anshumancanrock` and spends their own one-time registration.
+- The vault is a 0-byte system account, so a `withdraw` leaving it between 1 and 890,879 lamports fails on rent. `close` is how you take the rest.

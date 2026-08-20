@@ -79,9 +79,25 @@ echo
 echo "==> anchor build"
 anchor build
 
+# "deployed" is not the same as "up to date". Compare the bytecode actually
+# running against the local build, otherwise editing the program and re-running
+# this script silently tests the old code.
+DEPLOYED_MATCHES=no
 if solana program show "$PROGRAM_ID" -u "$URL" >/dev/null 2>&1; then
+  TMP_SO=$(mktemp)
+  if solana program dump "$PROGRAM_ID" "$TMP_SO" -u "$URL" >/dev/null 2>&1; then
+    LOCAL_LEN=$(stat -c%s target/deploy/pre_req_vault.so)
+    # on-chain dumps are zero-padded to the account size, so compare the prefix
+    if head -c "$LOCAL_LEN" "$TMP_SO" | cmp -s - target/deploy/pre_req_vault.so; then
+      DEPLOYED_MATCHES=yes
+    fi
+  fi
+  rm -f "$TMP_SO"
+fi
+
+if [ "$DEPLOYED_MATCHES" = yes ]; then
   echo
-  echo "==> program already deployed, skipping deploy"
+  echo "==> on-chain bytecode already matches this build, skipping deploy"
 else
   echo
   echo "==> anchor deploy"
